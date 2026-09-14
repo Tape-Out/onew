@@ -11,8 +11,7 @@ bus-neutral contracts in [`hwcore`](https://github.com/Tape-Out/hwcore), assembl
 
 ## Status
 
-Planned. What sits in this repository today is the retired picorv32-era Verilog,
-kept for provenance; the Bluespec rewrite has not landed yet.
+Planned, not started. Work starts when a design asks for a 1-Wire bus. The Verilog from the picorv32 era that sits here is kept as history only; the implementation will be written from scratch in Bluespec.
 
 ## Notes
 
