@@ -169,6 +169,7 @@ module mkOnew@L@Tb(Empty);
   Reg#(Bool)     busyR <- mkReg(False);
   Reg#(UInt#(4)) i     <- mkReg(0);
   Reg#(UInt#(32)) cyc  <- mkConfigReg(0);
+  Reg#(UInt#(32)) markC <- mkReg(0);
 
   function Action wr(Bit#(8) a, Bit#(32) v) = action
     let _ <- d.regs.access(RegReq { addr: a, write: True, wdata: v, wstrb: 4'hF });
@@ -248,6 +249,32 @@ module mkOnew@L@Tb(Empty);
     wr(8'h@TICK@, 2);
     op(0);
     action if (lastLow[1] != 1440) begin $display("FAIL at three cycles per microsecond the reset pulse is %0d cycles, want 1440", lastLow[1]); bad <= True; end endaction
+
+    // 操作进行中把 tick 改小：节拍计数已经越过新的 tick 也不许卡住。tick 为 9 时计数在 0 到 9
+    // 之间转，两次各晚一拍改成 0，两个相邻的相位里至少有一次计数大于 0。复位还剩约 760 微秒，
+    // 改完一拍一微秒，两万拍内必须做完
+    wr(8'h@TICK@, 9);
+    markC <= cyc;
+    wr(8'h@CMD@, 0);
+    delay(2000);
+    wr(8'h@TICK@, 0);
+    busyR <= True;
+    while (busyR) action
+      let x <- d.regs.access(RegReq { addr: 8'h@STATUS@, write: False, wdata: 0, wstrb: 4'hF });
+      busyR <= x.rdata[0] == 1;
+    endaction
+    action if (cyc - markC > 20000) begin $display("FAIL after tick is lowered mid operation the reset takes %0d cycles", cyc - markC); bad <= True; end endaction
+    wr(8'h@TICK@, 9);
+    markC <= cyc;
+    wr(8'h@CMD@, 0);
+    delay(2001);
+    wr(8'h@TICK@, 0);
+    busyR <= True;
+    while (busyR) action
+      let x <- d.regs.access(RegReq { addr: 8'h@STATUS@, write: False, wdata: 0, wstrb: 4'hF });
+      busyR <= x.rdata[0] == 1;
+    endaction
+    action if (cyc - markC > 20000) begin $display("FAIL after tick is lowered mid operation the reset takes %0d cycles", cyc - markC); bad <= True; end endaction
   endseq;
 
   FSM fsm <- mkFSM(test);

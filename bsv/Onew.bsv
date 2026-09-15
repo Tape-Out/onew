@@ -79,7 +79,8 @@ module mkOnew#(OnewCfg cfg)(OnewIfc#(aw, dw))
         endcase
       end
     end else begin
-      Bool us = sub == r.tick;
+      // 判「不小于」不判「等于」：操作中把 tick 改小，计数已经越过新值时，等于要等 16 位回绕
+      Bool us = sub >= r.tick;
       sub <= us ? 0 : sub + 1;
       if (us) begin
         Bit#(8) s = sh;

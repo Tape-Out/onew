@@ -15,11 +15,11 @@ Simulated. Software writes an operation to `cmd` (bus reset, write a bit, read a
 
 The slot table is `OnewSlot.bs`, written in Bluespec Haskell: one equation per kind of slot giving how long the master pulls the line low, when it samples and how long the slot lasts, all in microseconds. `tick` says how many clock cycles make a microsecond, so nothing is multiplied at build time. `Onew.bsv` walks one slot after another and picks the next slot of a byte operation. Bytes read are run through the CRC-8/MAXIM-DOW model of `Gf2` in `hwcore`, and `crc` reads back the CRC of the bytes since the last bus reset.
 
-The testbench drives a 1-Wire device model. It checks that a reset gets a presence pulse and pulls low for exactly 480 microseconds, that a written 0x33 reaches the device with 6 and 60 microsecond low times, that Read ROM returns the device ROM number and its CRC, that `done` and the interrupt follow `ien`, that a bus with no device reads no presence, and that three cycles per microsecond triple every time.
+The testbench drives a 1-Wire device model. It checks that a reset gets a presence pulse and pulls low for exactly 480 microseconds, that a written 0x33 reaches the device with 6 and 60 microsecond low times, that Read ROM returns the device ROM number and its CRC, that `done` and the interrupt follow `ien`, that a bus with no device reads no presence, that three cycles per microsecond triple every time, and that lowering `tick` in the middle of an operation, after the counter has passed the new value, does not stall the slot.
 
 | `crc` | off | on |
 | :--: | --: | --: |
-| Area, um2 | 1318 | 1445 |
+| Area, um2 | 1336 | 1490 |
 
 ## Registers
 

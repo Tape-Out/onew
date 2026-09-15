@@ -32,7 +32,7 @@ features:
     type: bool
     default: true
     area:
-      fixed: 126.84
+      fixed: 154.0
 emit:
 - kind: bsv
   package: Onew
@@ -50,7 +50,7 @@ deps:
   amba: ^0.1
 area:
   base:
-    fixed: 1317.68
+    fixed: 1336.16
   margin: 0.0
   model: points-additive
   error:
@@ -60,14 +60,14 @@ area:
   measured:
   - at:
       crc: false
-    um2: 1317.68
+    um2: 1336.16
   - at:
       crc: true
-    um2: 1444.52
+    um2: 1490.16
   corner:
     tool: ecc
     pdk: ics55
     freq_mhz: 100
     measured: '2026-09-15'
     toolchain: bsc 2026.01 · yosys 0.68+195 · ecc 0.1.0a11
-    gen_digest: sha256:ce9141155e055fc1
+    gen_digest: sha256:f1bf1dffcd86443e
