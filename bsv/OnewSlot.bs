@@ -1,0 +1,28 @@
+package OnewSlot where
+
+-- 1-Wire 的四种时隙，照 Maxim AN126《1-Wire Communication Through Software》表 1 的标准速度，
+-- 单位微秒：拉低多久、第几微秒采样、整个时隙多长。每种时隙一条方程，加超速档就是给每种
+-- 时隙再添一条，引擎一行不动。
+--
+-- 写微秒不写拍数，拍数由运行时的 tick 寄存器换算。旧的 wire_mmio.v 在 32 位里算
+-- CLK_FREQ * 480 / 1000000，100 MHz 下中间结果就溢出了。
+
+data Slot = Reset | Write1 | Write0 | ReadBit
+  deriving (Bits, Eq, FShow)
+
+struct Timing =
+    low    :: UInt 10
+    sample :: UInt 10
+    total  :: UInt 10
+  deriving (Bits, Eq, FShow)
+
+-- 复位：拉低 480，放开 70 后采样应答，再等 410。写 1：拉低 6、放开 64。
+-- 写 0：拉低 60、放开 10。读：拉低 6、放开 9 后采样、再等 55。不采样的时隙 sample 填 0
+timing :: Slot -> Timing
+timing Reset   = Timing { low = 480; sample = 550; total = 960 }
+timing Write1  = Timing { low =   6; sample =   0; total =  70 }
+timing Write0  = Timing { low =  60; sample =   0; total =  70 }
+timing ReadBit = Timing { low =   6; sample =  15; total =  70 }
+
+writeSlot :: Bit 1 -> Slot
+writeSlot b = if b == 1 then Write1 else Write0

@@ -1,0 +1,39 @@
+ip: onew
+contract: { aw: 8, dw: 32 }
+base: 0x1000F000
+size: 0x100
+regs:
+  - name: ctrl
+    offset: 0x00
+    desc: interrupt enable
+    fields: [ { name: ien, bits: "0:0", sw: rw, hw: r, reset: 0 } ]
+  # 一微秒多少拍减一。拍数取决于装配的时钟，复位按 100 MHz
+  - name: tick
+    offset: 0x04
+    desc: clock cycles per microsecond, minus one
+    fields: [ { name: val, width: 16, sw: rw, hw: r, reset: 99 } ]
+  - name: txd
+    offset: 0x08
+    desc: byte or bit to write
+    fields: [ { name: val, bits: "7:0", sw: rw, hw: r, reset: 0 } ]
+  # 0 复位 · 1 写一位 · 2 读一位 · 3 写一字节 · 4 读一字节；忙着的时候写进来的不算
+  - name: cmd
+    offset: 0x0C
+    desc: write an operation to start it
+    fields: [ { name: op, bits: "2:0", sw: w, hw: na, swmod: true, wrdata: true, reset: 0 } ]
+  - name: status
+    offset: 0x10
+    desc: operation state
+    fields:
+      - { name: busy,     bits: "0:0", sw: r, hw: w, volatile: true }
+      - { name: presence, bits: "1:1", sw: r, hw: w, volatile: true }
+      - { name: done,     bits: "2:2", sw: rw, onwrite: woclr, hw: r, hwset: true, stickybit: true, reset: 0 }
+  - name: rxd
+    offset: 0x14
+    desc: byte or bit read by the last operation
+    fields: [ { name: val, bits: "7:0", sw: r, hw: w, volatile: true } ]
+  - name: crc
+    offset: 0x18
+    desc: CRC-8/MAXIM-DOW of the bytes read since the last reset
+    feature: crc
+    fields: [ { name: val, bits: "7:0", sw: r, hw: w, volatile: true } ]

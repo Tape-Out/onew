@@ -1,0 +1,73 @@
+name: onew
+version: 0.1.0
+spec: '0.1'
+kind: ip
+lang:
+- bsv
+- bh
+identity:
+  slug: onew-tapeout-bsv
+  display_name: 1-Wire master
+  summary: 1-Wire master with reset, bit and byte operations at standard speed.
+  category: peripheral
+  subcategories:
+  - 1-wire
+  ip_family: onew
+  integration_profile:
+  - apb4-slave
+  maturity: simulated
+contract:
+  version: 1
+  ctrl:
+    shape: flat
+    aw: 8
+    dw: 32
+  irq:
+  - name: irq
+    kind: level
+params: {}
+features:
+  # 收到的字节顺手算 CRC-8/MAXIM-DOW（hwcore 的 Gf2）。1-Wire 的每一份 ROM 号与暂存区都带这个校验
+  crc:
+    type: bool
+    default: true
+    area:
+      fixed: 126.84
+emit:
+- kind: bsv
+  package: Onew
+  module: mkOnew
+  config_type: OnewCfg
+  interface: OnewIfc
+  ctrl: regs
+  pins:
+  - name: pins
+    type: OnewPins
+- kind: verilog-flat
+  bus: apb4
+deps:
+  hwcore: ^0.1
+  amba: ^0.1
+area:
+  base:
+    fixed: 1317.68
+  margin: 0.0
+  model: points-additive
+  error:
+    bound: 0.0
+    sign: over
+    note: first measured by ran recal --init; every configuration is on the grid
+  measured:
+  - at:
+      crc: false
+    um2: 1317.68
+  - at:
+      crc: true
+    um2: 1444.52
+  corner:
+    tool: ecc
+    pdk: ics55
+    freq_mhz: 100
+    measured: '2026-09-15'
+    toolchain: bsc 2026.01 · yosys 0.68+195 · ecc 0.1.0a11
+    gen_digest: sha256:ce9141155e055fc1

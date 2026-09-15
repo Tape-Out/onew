@@ -2,7 +2,7 @@
 
 1-Wire master.
 
-![maturity](https://img.shields.io/badge/maturity-planned-lightgrey) ![license](https://img.shields.io/badge/license-MulanPSL--2.0-blue)
+![maturity](https://img.shields.io/badge/maturity-simulated-yellow) ![license](https://img.shields.io/badge/license-MulanPSL--2.0-blue)
 
 Part of the [Tape-Out](https://github.com/Tape-Out) IP library: Bluespec IP over the
 bus-neutral contracts in [`hwcore`](https://github.com/Tape-Out/hwcore), assembled by
@@ -11,57 +11,29 @@ bus-neutral contracts in [`hwcore`](https://github.com/Tape-Out/hwcore), assembl
 
 ## Status
 
-Planned, not started. Work starts when a design asks for a 1-Wire bus. The Verilog from the picorv32 era that sits here is kept as history only; the implementation will be written from scratch in Bluespec.
+Simulated. Software writes an operation to `cmd` (bus reset, write a bit, read a bit, write a byte, read a byte), waits for `status.busy` to fall or for the interrupt, and reads the result. Timing follows table 1 of Maxim application note 126, *1-Wire Communication Through Software*, at standard speed.
 
-## Notes
+The slot table is `OnewSlot.bs`, written in Bluespec Haskell: one equation per kind of slot giving how long the master pulls the line low, when it samples and how long the slot lasts, all in microseconds. `tick` says how many clock cycles make a microsecond, so nothing is multiplied at build time. `Onew.bsv` walks one slot after another and picks the next slot of a byte operation. Bytes read are run through the CRC-8/MAXIM-DOW model of `Gf2` in `hwcore`, and `crc` reads back the CRC of the bytes since the last bus reset.
 
-## One-Wire Bus IP
+The testbench drives a 1-Wire device model. It checks that a reset gets a presence pulse and pulls low for exactly 480 microseconds, that a written 0x33 reaches the device with 6 and 60 microsecond low times, that Read ROM returns the device ROM number and its CRC, that `done` and the interrupt follow `ien`, that a bus with no device reads no presence, and that three cycles per microsecond triple every time.
 
-> Timing sequence description references:
->
-> - https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf
->
-> - https://www.analog.com/en/resources/technical-articles/1wire-communication-through-software.html
+| `crc` | off | on |
+| :--: | --: | --: |
+| Area, um2 | 1318 | 1445 |
 
-wire_io requires an external 5kΩ pull-up resistor.
+## Registers
 
-> TODO: Improve the FSM for special commands and CRC8
->
-> yosys: Checking module wire_mmio...
->
-> Warning: multiple conflicting drivers for wire_mmio.\slot_bit_cmd [1]:
->
->     port Q[0] of cell $auto$ff.cc:266:slice$85578 ($_DFFE_PP_)
->
->     port Q[0] of cell $auto$ff.cc:266:slice$85596 ($_DFFE_PP_)
->
-> Warning: multiple conflicting drivers for wire_mmio.\slot_bit_valid:
->
->     port Q[0] of cell $auto$ff.cc:266:slice$102932 ($_DFFE_PP_)
->
->     port Q[0] of cell $auto$ff.cc:266:slice$102946 ($_SDFFE_PN0P_)
->
-> Found and reported 2 problems.
+| Offset | Register | Fields |
+| :--: | :-- | :-- |
+| 0x00 | `ctrl` | `ien` |
+| 0x04 | `tick` | clock cycles per microsecond, minus one (99 at reset, for 100 MHz) |
+| 0x08 | `txd` | byte or bit to write |
+| 0x0C | `cmd` | `op`: 0 reset, 1 write bit, 2 read bit, 3 write byte, 4 read byte |
+| 0x10 | `status` | `busy`, `presence`, `done` (write 1 to clear) |
+| 0x14 | `rxd` | byte or bit read by the last operation |
+| 0x18 | `crc` | CRC-8/MAXIM-DOW of the bytes read since the last reset |
 
-## Usage
-
-> Write the number of bits to send, write to the send buffer, and set ctrl:send_is_submit to send bits to the 1-Wire bus.
->
-> Read operation is similar to write.
->
-> Special Commands:
->
-> **Search | Alarm** - Configure ctrl:alarm_only_search, and write to the search MMIO address to search until completed or ROM buffer is full.
->
-> > Write search tree for next search and retrieve the last ROMs.
->
-> **Get1ROM Command**:
->
-> Directly obtain ROM when there is only one device present.
->
-> **Change Speed**:
->
-> Write to the speed_reg to change speed, and send 0x3C to the bus if ctrl:change_speed is enabled.
+The line is open drain: `ow_pull` high means pull the pad low, and `ow_i` is the pad level. The board needs a pull-up of about 4.7 kilohm. Overdrive speed, strong pull-up and a hardware search are not implemented; software builds the search from bit reads and writes.
 
 ## License
 
