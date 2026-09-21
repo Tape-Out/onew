@@ -72,7 +72,7 @@ verdict = ("reset gets a presence, the timing follows AN126 at one and three cyc
 
 TEMPLATE = r'''package Onew@L@Tb;
 
-// 由 tb/mkonewtb.py 生成，勿手改。这一点：crc=@CRCON@
+// 由 htest/mkonewtb.py 生成，勿手改。这一点：crc=@CRCON@
 
 import StmtFSM::*;
 import ConfigReg::*;
